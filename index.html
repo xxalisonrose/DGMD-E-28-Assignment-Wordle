@@ -53,6 +53,29 @@
             gap: 5px;
         }
 
+        #keyboard-cont {
+            margin: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #keyboard-cont div {
+            display: flex;
+        }
+
+        .second-row {
+            margin: 0.5rem 0;
+        }
+
+        .keyboard-button {
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 0.5rem;
+            margin: 0 2px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
 
     </style>
   </head>
@@ -65,6 +88,42 @@
 
     <!--5 x 6 Grid-->
     <div id="gameGrid"></div>
+
+    <!--Display letters and match keyboard like in real Wordle game-->
+    <div id="keyboard-cont">
+        <div class="first-row">
+            <button class="keyboard-button">q</button>
+            <button class="keyboard-button">w</button>
+            <button class="keyboard-button">e</button>
+            <button class="keyboard-button">r</button>
+            <button class="keyboard-button">t</button>
+            <button class="keyboard-button">y</button>
+            <button class="keyboard-button">u</button>
+            <button class="keyboard-button">i</button>
+            <button class="keyboard-button">o</button>
+            <button class="keyboard-button">p</button>
+        </div>
+        <div class="second-row">
+            <button class="keyboard-button">a</button>
+            <button class="keyboard-button">s</button>
+            <button class="keyboard-button">d</button>
+            <button class="keyboard-button">f</button>
+            <button class="keyboard-button">g</button>
+            <button class="keyboard-button">h</button>
+            <button class="keyboard-button">j</button>
+            <button class="keyboard-button">k</button>
+            <button class="keyboard-button">l</button>
+        </div>
+        <div class="third-row">
+            <button class="keyboard-button">z</button>
+            <button class="keyboard-button">x</button>
+            <button class="keyboard-button">c</button>
+            <button class="keyboard-button">v</button>
+            <button class="keyboard-button">b</button>
+            <button class="keyboard-button">n</button>
+            <button class="keyboard-button">m</button>
+        </div>
+    </div>
 
     </div>
     </main>
@@ -83,7 +142,6 @@
         let row = document.createElement("div");
         row.className = "letter-row" + (i === 0 ? " first-row" : "");
         
-
         for (let j = 0; j < NUM_COLS; j++) {
             let box = document.createElement("div");
             box.className = "letter-box";
@@ -94,78 +152,90 @@
         }
     };
 
-    // Request and load API Dictionary
+    // Get random word using a random word API
+    async function fetchRandomWord() {
+    const url = 'https://wordsapiv1.p.rapidapi.com/words/?random=true';
+    const options = {
+        method: 'GET',
+        headers: {
+            'X-RapidAPI-Key': 'c15c5bdc06msh74c7432212cc586p106729jsn10e0b33ef973',
+            'X-RapidAPI-Host': 'wordsapiv1.p.rapidapi.com'
+        }
+    };
 
-        var apiKey = '7aa83abe-7a06-4d74-9fb8-68c886ef86ed';
+    while (true) {
+        try {
+            var response = await fetch(url, options);
+            var data = await response.json();
 
-        var request = new XMLHttpRequest();
+            
 
-        request.open("GET", "https://dictionaryapi.com/api/v3/references/collegiate/json/test?key=7aa83abe-7a06-4d74-9fb8-68c886ef86ed", true);
+            if (Array.isArray(data)) {
+                var fiveLetterWords = data.results.filter(pokemon => pokemon.name.length === 5);
 
-        request.onreadystatechange = function() {
-            // JSON data starts now
-            if (this.readyState == 4) { 
-                if(this.status > 201) {
-                    // There was an error in retrieving data if status is 201+
-                    alert("Error " + request.status);
-                } else if (this.status == 200) {
-                    // No error and API can continue
-                var data = JSON.parse(this.responseText);
-            }}};
-
-
-
-
-
-
-
-                    // For each word (id), filter out all words that aren't 5 letters
-                    data.forEach((meta) => {
-                            return meta.length === 5;
-                        }
-                    
-                        
-
-                    });
-
-
-                    var fiveLetterWords = 
-
-
-                    
-               
-
-
-
-
-                    
-                    
-
-                    // Randomly select a word
-                    if (fiveLetterWords.length > 0) {
-                        var randomIndex = Math.floor(Math.random() * fiveLetterWords.length);
-                        var randomWord = fiveLetterWords[randomIndex];
-                    }) 
-
-           
-                    
-            // REMEMBER TO DELETE ME!!!!    
-            console.log("Random word:", randomWord);
-
-                        // Update the game board with the random word
-                        updateGameBoard(randomWord);
-                    } else {
-                        // If it can't find a word
-                        alert('Words are hard. Try again later.');
-                    }
+                if (fiveLetterWords.length > 0 && !fiveLetterWords.some(word => word.trim() === "")) {
+                    var randomIndex = Math.floor(Math.random() * fiveLetterWords.length);
+                    var randomWord = fiveLetterWords[randomIndex];
+                    console.log(randomWord);
+                    return randomWord;
+                } else {
+                    console.log("Condition not met: There are not enough valid 5-letter words.");
                 }
+            } else {
+                console.log('Invalid response format.');
             }
-        };
+        } catch (error) {
+            console.log('Words are hard. Try again later. Error:', error);
+        }
+    }
+}
 
-        
-        
-        request.send();
+
+    var useThis = fetchRandomWord();
+
+    console.log(useThis);
+   
+
     
+/*/
+
+
+
+    
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+    
+
+
+        // Call the getRandomWord function to fetch a random word from the Merriam-Webster API
+        getRandomWord().then(word => {
+            console.log('Random 5-letter word:', word);
+        }).catch(error => {
+            console.error('Error:', error);
+        });
+
+
+
+                // Update the game board with the random word
+        async function startGame() {
+            var randomWord = await getRandomWord();
+            console.log('Random 5-letter word:', randomWord);
+            updateGameBoard(randomWord);
+}
+
 
 
     // Get a random word from the API and update the game board
@@ -184,7 +254,6 @@
 
     // Make game board
     makeBoard();
-
 
 
 
@@ -320,6 +389,23 @@ function checkGuess () {
     }
 }
 
+function shadeKeyBoard(letter, color) {
+    for (const elem of document.getElementsByClassName("keyboard-button")) {
+        if (elem.textContent === letter) {
+            let oldColor = elem.style.backgroundColor
+            if (oldColor === 'green') {
+                return
+            } 
+
+            if (oldColor === 'yellow' && color !== 'green') {
+                return
+            }
+
+            elem.style.backgroundColor = color
+            break
+        }
+    }
+}
 
 
 
@@ -328,10 +414,11 @@ function checkGuess () {
 
 
 
+/*/
 
 
 
-
+    
 
 
         
