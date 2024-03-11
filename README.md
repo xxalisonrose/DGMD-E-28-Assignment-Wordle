@@ -2,8 +2,6 @@
 DGMD E-28 Assignment Wordle
 
 
-API: https://dictionaryapi.dev/
+Random Word API: https://random-word-api.herokuapp.com/home
 
-https://api.dictionaryapi.dev/api/v2/entries/en/<word>
-
-NEW API: WORDSAPI
+Free Dictionary API: https://dictionaryapi.dev/

@@ -37,7 +37,7 @@
             justify-items: center;
         }
 
-        .letter-box {
+        .letter-column {
             width: 70px;
             height: 70px;
             background-color: lightblue;
@@ -86,6 +86,12 @@
         <h1>Wordle</h1>
         <h2>the DGMD E-28 Version</h2>  
 
+
+    <div class="gameBtns">
+        <button id="newGameBtn">New Game</button>
+        <button id="hint">Hint</button>
+    </div>
+
     <!--5 x 6 Grid-->
     <div id="gameGrid"></div>
 
@@ -125,6 +131,10 @@
         </div>
     </div>
 
+
+
+    <div id="hintBox"></div>
+
     </div>
     </main>
 
@@ -132,214 +142,246 @@
     // JS starts here
         console.log("JS loaded");
 
+    // New Game = Refresh page
+    document.getElementById("newGameBtn").addEventListener("click", function() {
+        location.reload();
+    });
+
+
     // Create Game Board
     var board = document.getElementById("gameGrid");
     var NUM_ROWS = 6;
     var NUM_COLS = 5;
+    var correctWord = "";
+    var guessesRemaining = 6;
+    var currentGuess = [];
+    var nextLetter = 0;
 
     function makeBoard() {
-        for (let i = 0; i < NUM_ROWS; i++) {
-        let row = document.createElement("div");
-        row.className = "letter-row" + (i === 0 ? " first-row" : "");
+    for (let i = 0; i < NUM_ROWS; i++) {
+        var row = document.createElement("div");
+        row.className = "letter-row";
         
         for (let j = 0; j < NUM_COLS; j++) {
-            let box = document.createElement("div");
-            box.className = "letter-box";
-            row.appendChild(box);
+            var column = document.createElement("div");
+            column.className = "letter-column";
+            row.appendChild(column);
         }
 
         board.appendChild(row);
-        }
-    };
-
-    // Get random word using a random word API
-    async function fetchRandomWord() {
-    const url = 'https://wordsapiv1.p.rapidapi.com/words/?random=true';
-    const options = {
-        method: 'GET',
-        headers: {
-            'X-RapidAPI-Key': 'c15c5bdc06msh74c7432212cc586p106729jsn10e0b33ef973',
-            'X-RapidAPI-Host': 'wordsapiv1.p.rapidapi.com'
-        }
-    };
-
-    while (true) {
-        try {
-            var response = await fetch(url, options);
-            var data = await response.json();
-
-            
-
-            if (Array.isArray(data)) {
-                var fiveLetterWords = data.results.filter(pokemon => pokemon.name.length === 5);
-
-                if (fiveLetterWords.length > 0 && !fiveLetterWords.some(word => word.trim() === "")) {
-                    var randomIndex = Math.floor(Math.random() * fiveLetterWords.length);
-                    var randomWord = fiveLetterWords[randomIndex];
-                    console.log(randomWord);
-                    return randomWord;
-                } else {
-                    console.log("Condition not met: There are not enough valid 5-letter words.");
-                }
-            } else {
-                console.log('Invalid response format.');
-            }
-        } catch (error) {
-            console.log('Words are hard. Try again later. Error:', error);
-        }
     }
-}
-
-
-    var useThis = fetchRandomWord();
-
-    console.log(useThis);
-   
-
-    
-/*/
-
-
-
-    
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-    
-
-
-        // Call the getRandomWord function to fetch a random word from the Merriam-Webster API
-        getRandomWord().then(word => {
-            console.log('Random 5-letter word:', word);
-        }).catch(error => {
-            console.error('Error:', error);
-        });
-
-
-
-                // Update the game board with the random word
-        async function startGame() {
-            var randomWord = await getRandomWord();
-            console.log('Random 5-letter word:', randomWord);
-            updateGameBoard(randomWord);
-}
-
-
-
-    // Get a random word from the API and update the game board
-    function updateGameBoard(word) {
-        // Get all the letter boxes
-        var letterBoxes = document.querySelectorAll(".letter-box");
-
-        // Split the word into characters
-        var letters = word.split("");
-
-        // Update the letter boxes with the characters of the word
-        for (var i = 0; i < letterBoxes.length; i++) {
-            letterBoxes[i].textContent = letters[i].toUpperCase(); // Convert to uppercase for consistency
-        }
-    };
+};
 
     // Make game board
     makeBoard();
 
+    // Get random word using Random Word API that automatically filters out words that aren't exactly 5 letters
+    const wordURL = 'https://random-word-api.herokuapp.com/word?length=5';
 
+fetch(wordURL)
+    .then(response => response.json())
+    .then(data => {
+        // Store word in single page load to access data
+        sessionStorage.setItem('randomWord', data[0]);
 
+        // Access to randomWord testing
+        var randomWord = sessionStorage.getItem('randomWord');
+
+        // Testing that it matches
+        console.log('Stored data: ', randomWord);   
+
+        // Look up the definition of the randomWord to use as a hint if needed
+        var defURL = `https://api.dictionaryapi.dev/api/v2/entries/en/${randomWord}`;
+
+        fetch(defURL)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Dictionary API request failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Store definition in single page load to access data
+                sessionStorage.setItem('definition', data[0].meanings[0].definitions[0].definition);
+
+                // Access to definition testing
+                var wordDef = sessionStorage.getItem('definition');
+
+                // Testing that it matches
+                console.log('Stored definition: ', wordDef);   
+            })
+            .catch(error => {
+                // If the random word isn't found in the dictionary, the page will reload
+                location.reload();
+            });
+                        // Update the game board with the word
+            function updateGameBoard(randomWord) {
+                // Get all the letter boxes
+                var boxes = document.querySelectorAll(".letter-box");
+
+                // Split the word into characters
+                var letters = randomWord.split("");
+
+                // Update the letter boxes with the characters of the word
+                for (var i = 0; i < boxes.length; i++) {
+                    boxes[i].textContent = letters[i].toUpperCase(); // Convert to uppercase for consistency
+                }
+            };
+    })
+    .catch(error => {
+        console.error('Words are hard. Error:', error);
+    });
+
+    //Assign words to be used outside of fetch block to variables
+    var randomWord = sessionStorage.getItem('randomWord');
+    var wordDef = sessionStorage.getItem('definition');
+   
     // Add key strokes in boxes
     document.addEventListener("keyup", (x) => {
-        
-        if (guessesRemaining === 0) {
-            return
-        }
-
         let pressedKey = String(x.key)
-        if (pressedKey === "Backspace" && nextLetter !== 0) {
-            deleteLetter()
-            return
+        if (pressedKey === "Backspace") {
+            deleteLetter();
+            return;
         }
 
         if (pressedKey === "Enter") {
-        checkGuess()
-        return
+            submitGuess();
+            moveNextRow();
+            return;
         }
 
         let found = pressedKey.match(/[a-z]/gi)
         if (!found || found.length > 1) {
-            return
+            return;
         } else {
-            addLetter(pressedKey)
+            addLetter(pressedKey);
         }
     });
 
-    // Add Letter
-    function addLetter(pressedKey) {
-        if (nextLetter === 5) {
-        return
+    
+
+// Used when the user submits their guess (and it is guess 6 or less)
+function submitGuess() {
+
+    var guessedWord = currentGuess.join('');
+
+    wordValid(guessedWord);
+
+    // If you hit submit too soon
+    if (guessedWord.length != 5) {
+        alert("Not enough letters!");
+        return;
     }
 
-    let row = document.getElementsByClassName("letter-row")[6 - guessesRemaining];
-    let box = row.child[nextLetter];
+    if (guessedWord === randomWord) {
+        alert("You guessed right! Game over!");
+        guessesRemaining = 0;
+        return;
+    } else {
+        guessesRemaining -= 1;
+
+        console.log("Guesses Remaining: " + guessesRemaining);
+
+        // Move to the next row
+        moveNextRow();
+
+        // If there are no remaining guesses, the game is over
+        if (guessesRemaining === 0) {
+            gameOver();
+    }
+}};    
+
+// Add Letter
+function addLetter(pressedKey) {
+    if (nextLetter === 5) {
+        return;
+    }
+    const row = document.getElementsByClassName("letter-row")[0];
+    const box = row.children[nextLetter];
     box.textContent = pressedKey;
     box.classList.add("filled-box");
     currentGuess.push(pressedKey);
     nextLetter += 1;
-};
+}
 
 // Delete Letter
-function deleteLetter () {
-    let row = document.getElementsByClassName("letter-row")[6 - guessesRemaining]
-    let box = row.children[nextLetter - 1]
-    box.textContent = ""
-    box.classList.remove("filled-box")
-    currentGuess.pop()
-    nextLetter -= 1
-};
+function deleteLetter() {
+    const row = document.getElementsByClassName("letter-row")[0];
+    const box = row.children[nextLetter - 1];
+    box.textContent = "";
+    box.classList.remove("filled-box");
+    currentGuess.pop();
+    nextLetter -= 1;
+}
+
+// Add a function to compare the guessed word with the correct word and provide feedback
+function provideFeedback(guessedWord) {
+    let feedback = [];
+    for (let i = 0; i < 5; i++) {
+        if (guessedWord[i] === correctWord[i]) {
+            feedback.push("green"); // Correct letter in the correct position
+        } else if (correctWord.includes(guessedWord[i])) {
+            feedback.push("yellow"); // Correct letter in the wrong position
+        } else {
+            feedback.push("gray"); // Incorrect letter
+        }
+    }
+    return feedback;
+}
+
+    // Check if the guessed word is a valid English word
+function wordValid(guessedWord) {
+    var dictionURL = `https://api.dictionaryapi.dev/api/v2/entries/en/${guessedWord}`;
+
+    fetch(dictionURL)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Dictionary API request failed');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.length > 0) {
+                // The guessed word is a valid English word
+                console.log(`${guessedWord} is a valid English word.`);
+            } else {
+                // The guessed word is not a valid English word
+                alert(`${guessedWord} is not a valid English word.`);
+
+            }
+        })
+        .catch(error => {
+            // Handle errors from the API request
+            console.error('Error:', error);
+        });
+}
 
 
 
+function moveNextRow() {
+    const rows = document.getElementsByClassName("letter-row");
 
+    const nextRowIndex = NUM_ROWS - guessesRemaining;
 
-
-
-
-
-
-
-
-
-// Check Guess
-
-function checkGuess () {
-    let row = document.getElementsByClassName("letter-row")[6 - guessesRemaining]
-    let guessString = ''
-    let rightGuess = Array.from(rightGuessString)
-
-    for (const val of currentGuess) {
-        guessString += val
+    // Remove "active-row" class from all rows
+    for (let i = 0; i < rows.length; i++) {
+        rows[i].classList.remove("active-row");
     }
 
-    if (guessString.length != 5) {
-        alert("Not enough letters!")
-        return
+    // If the next row index is within bounds, add "active-row" class
+    if (nextRowIndex >= 0 && nextRowIndex < NUM_ROWS) {
+        rows[nextRowIndex].classList.add("active-row");
     }
+}
 
-    if (!WORDS.includes(guessString)) {
-        alert("Word not in list!")
-        return
-    }
 
+
+function gameOver() {
+    alert("You've run out of guesses! Game over!");
+    alert(`The right word was: "${randomWord}"`);     
+}
+
+/*/
     
     for (let i = 0; i < 5; i++) {
         let letterColor = ''
@@ -373,21 +415,11 @@ function checkGuess () {
         }, delay)
     }
 
-    if (guessString === rightGuessString) {
-        alert("You guessed right! Game over!")
-        guessesRemaining = 0
-        return
-    } else {
-        guessesRemaining -= 1;
-        currentGuess = [];
-        nextLetter = 0;
 
-        if (guessesRemaining === 0) {
-            alert("You've run out of guesses! Game over!")
-            alert(`The right word was: "${rightGuessString}"`)
-        }
-    }
 }
+
+
+
 
 function shadeKeyBoard(letter, color) {
     for (const elem of document.getElementsByClassName("keyboard-button")) {
@@ -408,20 +440,13 @@ function shadeKeyBoard(letter, color) {
 }
 
 
-
-
-
-
-
-
 /*/
-
-
 
     
 
 
-        
+
+
     </script>
   </body>
 </html>
