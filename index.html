@@ -151,35 +151,43 @@
       var correctWord = "";
       var guessedWord = "";
 
-
     // Array of current guessed letters to turn into a word
       var currentGuess = [];
 
       // Total Guesses
       var guessesRemaining = 6;
     
+      // For add/delete letter. Moves either forward a space or back a space
       var nextLetter = 0;
 
       // Create variables to store data
       var randomWord;
       var wordDef;
 
+      // Starting row and column
+      var currentRow = 0;
+      var currentColumn = 0;
+
       // Create Game Board
       var board = document.getElementById("gameGrid");
-      var NUM_ROWS = 6;
-      var NUM_COLS = 5;
+      var numberRows = 6;
+      var numberColumns = 5;
 
+ 
+      // Create elements in HTML "div" for rows and columns based on board game specs
       function makeBoard() {
-        for (let i = 0; i < NUM_ROWS; i++) {
+        // Create rows
+        for (let i = 0; i < numberRows; i++) {
           var newRow = document.createElement("div");
           newRow.className = "letterRow";
 
-          for (let j = 0; j < NUM_COLS; j++) {
+          // Create columns and add them to the board
+          for (let j = 0; j < numberColumns; j++) {
             var newColumn = document.createElement("div");
             newColumn.className = "letterColumn";
             newRow.appendChild(newColumn);
           }
-
+          // Add rows to the columns
           board.appendChild(newRow);
         }
       }
@@ -266,7 +274,6 @@ document.addEventListener("keyup", (event) => {
     }
     if (pressedKey === "Enter") {
         submitGuess();
-        moveNextRow();
         return;
     }
 
@@ -291,7 +298,8 @@ function moveNextRow() {
         return;
     }
 
-    const nextRowIndex = NUM_ROWS - guessesRemaining;
+    // Calculate the next row index based on the remaining guesses
+    const nextRowIndex = 6 - guessesRemaining;
 
     // Remove "active-row" class from all rows
     for (let i = 0; i < rows.length; i++) {
@@ -299,28 +307,28 @@ function moveNextRow() {
     }
 
     // If the next row index is within bounds, add "active-row" class
-    if (nextRowIndex >= 0 && nextRowIndex < NUM_ROWS) {
+    if (nextRowIndex >= 0 && nextRowIndex < numberRows) {
         rows[nextRowIndex].classList.add("active-row");
+        currentRow = nextRowIndex; // Update the currentRow variable
+        currentColumn = 0;
+        currentGuess = [];
     }
-}
-
-
+};
 
       // Used when the user submits their guess
       function submitGuess() {
-        // Check to see if the guessedWord is a valid word in the english language
-        var guessedWord = currentGuess.join("");
+        // Check to see if the guess is a valid word in the english language
+        var guess = currentGuess.join("");
 
-        wordValid(guessedWord);
+        wordValid(guess);
         
-
         // If you hit submit too soon
-        if (guessedWord.length != 5) {
+        if (guess.length != 5) {
           alert("Not enough letters!");
           return;
         }
         // If your word is correct OR if you run out of guesses
-        if (guessedWord === randomWord) {
+        if (guess === randomWord) {
           alert("You guessed right! Game over!");
           guessesRemaining = 0;
           return;
@@ -338,26 +346,73 @@ function moveNextRow() {
         }
       };
 
-      // Add Letter
-      function addLetter(pressedKey) {
-        if (nextLetter === 5) {
-          return;
-        }
-        const row = document.getElementsByClassName("letterRow")[0];
-        const box = row.children[nextLetter];
-        box.textContent = pressedKey;
-        currentGuess.push(pressedKey);
-        nextLetter += 1;
-      }
 
-      // Delete Letter
-      function deleteLetter() {
-        const row = document.getElementsByClassName("letterRow")[0];
-        const box = row.children[nextLetter - 1];
-        box.textContent = "";
-        currentGuess.pop();
-        nextLetter -= 1;
-      }
+
+// Add letter
+function addLetter(pressedKey) {
+    // Get the row and box to add the letter
+    const row = document.getElementsByClassName("letterRow")[currentRow];
+
+    //All for testing to see if the letters are moving in the correct order
+    //Debug mode?
+    console.log("Current Row:", currentRow);
+    console.log("Current Column:", currentColumn);
+    // It needs to count 0 as 1 so - 1 to count the number of children
+    console.log("Number of Children:", row.children.length - currentColumn - 1);
+
+    const box = row.children[currentColumn];
+
+        // Check if box is undefined
+        if (!box) {
+        console.error("Box is undefined.");
+        return;
+    }
+  
+    // Insert the letter
+    box.textContent = pressedKey;
+    currentGuess.push(pressedKey);
+  
+// Check if current row is full
+if (currentColumn != 4) {
+      currentColumn++;
+    } else {
+      return;
+    }
+};
+
+
+
+// Delete Letter
+function deleteLetter() {
+    // Check if there are no letters to delete
+    if (currentGuess.length === 0) {
+        return;
+    }
+
+    // Move back to the previous column
+    currentColumn--;
+
+    // If moving back from the first column, move to the previous row
+    if (currentColumn < 0) {
+        currentRow--;
+        // If moving back from the first row, ensure it doesn't go beyond the grid
+        if (currentRow < 0) {
+            currentRow = 0;
+        }
+        // Reset to last column of the previous row
+        currentColumn = numberColumns - 1;
+    }
+
+    // Get the row and box of the last entered letter
+    const row = document.getElementsByClassName("letterRow")[currentRow];
+    const box = row.children[currentColumn];
+
+    // Delete the letter
+    box.textContent = "";
+    currentGuess.pop();
+}
+
+
 
       // Add a function to compare the guessed word with the correct word and provide feedback
       function provideFeedback(guessedWord) {
