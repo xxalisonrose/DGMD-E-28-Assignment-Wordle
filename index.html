@@ -100,27 +100,27 @@
         justify-content: center;
       }
 
-      #newGameBtn, 
-      #hintBtn, 
+      #newGameBtn,
+      #hintBtn,
       #defBtn {
         margin: 5px;
         margin-bottom: 2px;
       }
 
-      #bugBtn, 
-      #newGameBtn, 
-      #hintBtn, 
+      #bugBtn,
+      #newGameBtn,
+      #hintBtn,
       #defBtn {
-      text-align: center;
-      background-color: whitesmoke;
-      color: black;
-      border: 2px solid #e7e7e7;
-      font-weight: bolder;
+        text-align: center;
+        background-color: whitesmoke;
+        color: black;
+        border: 2px solid #e7e7e7;
+        font-weight: bolder;
       }
 
-      #bugBtn:hover, 
-      #newGameBtn:hover, 
-      #hintBtn:hover, 
+      #bugBtn:hover,
+      #newGameBtn:hover,
+      #hintBtn:hover,
       #defBtn:hover {
         background-color: lightcyan;
       }
@@ -135,16 +135,23 @@
         position: relative;
       }
 
-      #defBox, #hintBox {
-      text-align: center;
-      padding: 5px;
+      #defBox,
+      #hintBox {
+        text-align: center;
+        padding: 5px;
+      }
+
+      #debugGrid {
+        display: flex;
+      }
+
+      #bugBtn {
+        margin-right: 20px;
       }
 
       #debug {
-        p: limegreen;
+        color: limegreen;
       }
-
-
     </style>
   </head>
   <body>
@@ -156,22 +163,23 @@
 
         <div class="aboveGame">
           <div class="topBtns">
-          <button id="newGameBtn">New Game</button>
-          <button id="hintBtn" onclick="hint(correctWord)">Hint</button>
-          <button id="defBtn" onclick="defHint(correctWord)">Definition</button>
+            <button id="newGameBtn">New Game</button>
+            <button id="hintBtn" onclick="hint(correctWord)">Hint</button>
+            <button id="defBtn" onclick="defHint(correctWord)">
+              Definition
+            </button>
           </div>
-        
 
-        <div id="hints">
-        <div id="hintBox" style="display: none;"></div>
-        <div id="defBox" style="display: none;"></div>
-        </div>
+          <div id="hints">
+            <div id="hintBox" style="display: none"></div>
+            <div id="defBox" style="display: none"></div>
+          </div>
         </div>
 
         <!--5 x 6 Grid-->
         <div id="gameGrid"></div>
 
-        <!--Display letter elements (not clickable ATM. maybe if there is time...)-->
+        <!--Display letter elements (And it's clickable!!!)-->
         <div id="keyboard">
           <div class="firstRow">
             <button class="keyboardButton">q</button>
@@ -208,11 +216,10 @@
         </div>
 
         <div id="debugGrid">
-        <button id="bugBtn" onclick="bugMode()">Debug Mode</button>
+          <button id="bugBtn" onclick="bugMode()">Debug Mode</button>
 
-        <div id="debug" style="display: none;"></div>
+          <div id="debug" style="display: none"></div>
         </div>
-        
       </div>
     </main>
 
@@ -220,12 +227,21 @@
       // JS starts here
       console.log("JS loaded");
 
-      // Debug Mode Features throughout Code: color change and displays the word with giveMeWord()
-      //Debug Mode Color Change
-      function bugMode() {
-        var dark = document.body;
-        dark.classList.toggle("buggy");
-        }
+      // Clickable Keyboard
+
+      const keyboardButtons = document.querySelectorAll('.keyboardButton');
+
+      keyboardButtons.forEach(button => {
+          button.addEventListener('click', () => {
+              // Get the text content of the letter
+              const letter = button.textContent;
+              // Make it uppercase
+              const LETTER = letter.toUpperCase();
+              // BAM! Letter that is clickable!
+              addLetter(LETTER);
+          });
+      });
+
 
       // New Game = Refresh page
       document
@@ -251,6 +267,7 @@
       var wordDef;
       var correctWord;
       var wordDef;
+      var LETTERS;
 
       // Starting row and column
       var currentRow = 0;
@@ -283,65 +300,65 @@
       makeBoard();
 
       // Get random word using Random Word API that automatically filters out words that aren't exactly 5 letters
-    function newGame() {
-      // Clear any saved data from previous games
-      sessionStorage.clear();
-      
-      const wordURL = "https://random-word-api.herokuapp.com/word?length=5";
+      function newGame() {
+        // Clear any saved data from previous games
+        sessionStorage.clear();
 
-      async function getWord() {
-        try {
-          const wordResponse = await fetch(wordURL);
-          if (!wordResponse.ok) {
-            throw new Error("Failed to fetch word");
+        const wordURL = "https://random-word-api.herokuapp.com/word?length=5";
+
+        async function getWord() {
+          try {
+            const wordResponse = await fetch(wordURL);
+            if (!wordResponse.ok) {
+              throw new Error("Failed to fetch word");
+            }
+            const wordData = await wordResponse.json();
+            correctWord = wordData[0];
+
+            // Testing
+            console.log("Stored data: ", correctWord);
+
+            // Call getDefinition() passing the correctWord
+            getDefinition(correctWord);
+          } catch (error) {
+            console.error("Error loading the game:", error);
           }
-          const wordData = await wordResponse.json();
-          correctWord = wordData[0];
-
-          // Testing
-          console.log("Stored data: ", correctWord);
-       
-      // Call getDefinition() passing the correctWord
-      getDefinition(correctWord);
-    } catch (error) {
-      console.error("Error loading the game:", error);
-    }
-  }
-
-    // Function to fetch and store the definition of the random word
-    async function getDefinition(correctWord) {
-      try {
-        const defURL = `https://api.dictionaryapi.dev/api/v2/entries/en/${correctWord}`;
-        const defResponse = await fetch(defURL);
-        if (!defResponse.ok) {
-          throw new Error("Dictionary API request failed");
         }
-        const defData = await defResponse.json();
-        wordDef = defData[0].meanings[0].definitions[0].definition;
 
-                // Testing that it matches
-                console.log("Stored definition: ", wordDef);
+        // Function to fetch and store the definition of the random word
+        async function getDefinition(correctWord) {
+          try {
+            const defURL = `https://api.dictionaryapi.dev/api/v2/entries/en/${correctWord}`;
+            const defResponse = await fetch(defURL);
+            if (!defResponse.ok) {
+              throw new Error("Dictionary API request failed");
+            }
+            const defData = await defResponse.json();
+            wordDef = defData[0].meanings[0].definitions[0].definition;
 
-      // Store word and definition in session storage to access data during the game
-        sessionStorage.setItem("correctWord", correctWord);
-        sessionStorage.setItem("definition", wordDef);
+            // Testing that it matches
+            console.log("Stored definition: ", wordDef);
 
-          //Assign words to be used outside of fetch block to variables
-      } catch (error) {
-        // If the random word isn't found in the dictionary
-        console.error("Words are hard. Error:", error);
-        location.reload();
+            // Store word and definition in session storage to access data during the game
+            sessionStorage.setItem("correctWord", correctWord);
+            sessionStorage.setItem("definition", wordDef);
+
+            //Assign words to be used outside of fetch block to variables
+          } catch (error) {
+            // If the random word isn't found in the dictionary
+            console.error("Words are hard. Error:", error);
+            location.reload();
+          }
+        }
+        getWord();
       }
-    }
-      getWord();
-    }
-    newGame();
+      newGame();
 
-    // Access correctWord and wordDef after it's been assigned and pause a moment to make sure everything is assigned
-setTimeout(() => {
-    console.log("Correct Word Check: " + correctWord);
-    console.log("Definition Check: " + wordDef)
-}, 600);
+      // Access correctWord and wordDef after it's been assigned and pause a moment to make sure everything is assigned
+      setTimeout(() => {
+        console.log("Correct Word Check: " + correctWord);
+        console.log("Definition Check: " + wordDef);
+      }, 600);
 
       // Update the game board with the word
       function updateBoard() {
@@ -382,6 +399,9 @@ setTimeout(() => {
 
         // Handle valid input
         addLetter(pressedKey.toUpperCase()); // Convert to uppercase for consistency
+
+        // Log currentGuess after adding the letter
+        console.log("Current Guess after adding letter:", currentGuess);
       });
 
       function moveNextRow() {
@@ -412,34 +432,46 @@ setTimeout(() => {
 
       // Used when the user submits their guess
       function submitGuess() {
-        // Check to see if the guess is a valid word in the english language
+        // Check if the guess is a valid word in the English language
         var guess = currentGuess.join("");
+
+        console.log(guess);
 
         wordValid(guess);
 
-        // If you hit submit too soon
-        if (guess.length != 5) {
-          alert("Not enough letters!");
-          return;
-        }
-        // If your word is correct OR if you run out of guesses
-        if (guess === correctWord) {
-          alert("You guessed right! Game over!");
-          guessesRemaining = 0;
-          winner();
-          return;
-        } else {
-          guessesRemaining -= 1;
+        var urGuess = guess.toLowerCase();
+        console.log(urGuess);
 
-          console.log("Guesses Remaining: " + guessesRemaining);
+        var rightWord = correctWord.toLowerCase();
+        console.log(rightWord);
 
-          moveNextRow();
-        }
+        // Wait for api to complete before proceeding
+        setTimeout(() => {
+          // If the word is not valid or the API request failed
+          if (guess.length !== 5) {
+            alert("Not enough letters!");
+            return;
+          }
 
-        // If there are no remaining guesses, the game is over
-        if (guessesRemaining === 0) {
-          gameOver();
-        }
+          // If your word is correct OR if you run out of guesses
+          if (urGuess === rightWord) {
+            alert("You guessed correctly! Game over!");
+            guessesRemaining = 0;
+            winner();
+            return;
+          } else {
+            guessesRemaining -= 1;
+            console.log("Guesses Remaining: " + guessesRemaining);
+            keyboardLetterChecker(currentGuess);
+            letterChecker();
+            moveNextRow();
+          }
+
+          // If there are no remaining guesses, the game is over
+          if (guessesRemaining === 0) {
+            gameOver();
+          }
+        }, 1000); // Adjust the delay as needed to ensure the API call completes before proceeding
       }
 
       // Add letter
@@ -447,8 +479,8 @@ setTimeout(() => {
         // Get the row and box to add the letter
         const row = document.getElementsByClassName("letterRow")[currentRow];
 
-        //All for testing to see if the letters are moving in the correct order
-        //Debug mode?
+        // All for testing to see if the letters are moving in the correct order
+        // Debug mode?
         console.log("Current Row:", currentRow);
         console.log("Current Column:", currentColumn);
         // It needs to count 0 as 1 so - 1 to count the number of children
@@ -465,16 +497,23 @@ setTimeout(() => {
           return;
         }
 
+        // Check if the box already contains a letter
+        if (box.textContent !== "") {
+          console.error("Box already contains a letter.");
+          return;
+        }
+
+        // Check if all 5 letters are added
+        if (currentColumn === 5) {
+          return;
+        }
+
         // Insert the letter
         box.textContent = pressedKey;
         currentGuess.push(pressedKey);
 
-        // Check if current row is full
-        if (currentColumn != 4) {
-          currentColumn++;
-        } else {
-          return;
-        }
+        // Increment the current column
+        currentColumn++;
       }
 
       // Delete Letter
@@ -507,21 +546,6 @@ setTimeout(() => {
         currentGuess.pop();
       }
 
-      // Add a function to compare the guessed word with the correct word and provide feedback
-      function provideFeedback() {
-        let feedback = [];
-        for (let i = 0; i < 5; i++) {
-          if (guessedWord[i] === correctWord[i]) {
-            feedback.push("green"); // Correct letter in the correct position
-          } else if (correctWord.includes(guessedWord[i])) {
-            feedback.push("yellow"); // Correct letter in the wrong position
-          } else {
-            feedback.push("gray"); // Incorrect letter
-          }
-        }
-        return feedback;
-      }
-
       // Check if the guessed word is a valid English word
       function wordValid(guessedWord) {
         var dictionURL = `https://api.dictionaryapi.dev/api/v2/entries/en/${guessedWord}`;
@@ -534,27 +558,24 @@ setTimeout(() => {
             return response.json();
           })
           .then((data) => {
-            if (data.length > 0) {
+            // Check if the API returned any data for the word
+            if (Array.isArray(data) && data.length > 0) {
               // The guessed word is a valid English word
               console.log(`${guessedWord} is a valid English word.`);
             } else {
               // The guessed word is not a valid English word
               alert(`${guessedWord} is not a valid English word.`);
             }
-          })
-          .catch((error) => {
-            // Handle errors from the API request
-            console.error("Error:", error);
           });
-      };
+      }
 
       function gameOver() {
-        alert('You have run out of guesses! Game over!');
+        alert("You have run out of guesses! Game over!");
         alert(`The right word was: "${correctWord}"`);
-      };
+      }
 
       function winner() {
-        alert('You won!');
+        alert("You won!");
       }
 
       //Hint Box Section
@@ -565,105 +586,129 @@ setTimeout(() => {
         console.log("The first letter of the word is " + numOne);
 
         const x = document.getElementById("hintBox");
-          if (x.style.display === "none") {
-            x.style.display = "block";
-          } else {
-            x.style.display = "none";
-          }
+        if (x.style.display === "none") {
+          x.style.display = "block";
+        } else {
+          x.style.display = "none";
+        }
 
-          x.innerHTML = "The first letter of the word is " + numOne;
-
-
+        x.innerHTML = "The first letter of the word is " + numOne;
       }
 
       function defHint(correctWord) {
         console.log(wordDef);
 
         const x = document.getElementById("defBox");
-          if (x.style.display === "none") {
-            x.style.display = "block";
-          } else {
-            x.style.display = "none";
-          }
+        if (x.style.display === "none") {
+          x.style.display = "block";
+        } else {
+          x.style.display = "none";
+        }
 
-          x.innerHTML = wordDef;
-        };
-  
-
-          function giveMeWord(correctWord) {
-            var x = document.getElementById("debug");
-      if (x.style.display === "none") {
-        x.style.display = "block";
-      } else {
-        x.style.display = "none";
+        x.innerHTML = wordDef;
       }
 
-      x.innerHTML = correctWord;
-          };
-      
+      // Debug Mode Features throughout Code: color change and displays the word
+      //Debug Mode Color Change
+      function bugMode() {
+        var dark = document.body;
+        dark.classList.toggle("buggy");
 
-
-
-      /*/
-    
-    for (let i = 0; i < 5; i++) {
-        let letterColor = ''
-        let box = row.children[i]
-        let letter = currentGuess[i]
-        
-        let letterPosition = rightGuess.indexOf(currentGuess[i])
-        // is letter in the correct guess
-        if (letterPosition === -1) {
-            letterColor = 'grey'
+        var x = document.getElementById("debug");
+        if (x.style.display === "none") {
+          x.style.display = "block";
         } else {
-            // now, letter is definitely in word
-            // if letter index and right guess index are the same
-            // letter is in the right position 
-            if (currentGuess[i] === rightGuess[i]) {
-                // shade green 
-                letterColor = 'green'
+          x.style.display = "none";
+        }
+
+        x.innerHTML = correctWord.toUpperCase();
+      }
+
+
+    // Letter indicator - have they been used? Are they correct? Are they wrong?
+    function keyboardLetterChecker() {
+    var arrayCorrect = correctWord.toUpperCase(); // Convert correctWord to uppercase
+    var upperArray = arrayCorrect.split(""); // Split the uppercase word into an array of characters
+
+    var feedback = []; // Initialize the feedback array
+
+
+
+    // Letters in keyboard
+    for (let i = 0; i < 5; i++) {
+
+      console.log(upperArray[i]);
+      console.log(currentGuess[i]);
+
+        if (currentGuess[i] === upperArray[i]) {
+            feedback.push("green"); // Correct letter in the correct position
+        } else if (upperArray[i] !== currentGuess[i] && upperArray.includes(currentGuess[i])) {
+            feedback.push("yellow"); // Correct letter in the wrong position
+        } else {
+            feedback.push("gray"); // Incorrect letter
+        }
+    }
+
+    return feedback; // Return the feedback array after the loop completes
+}
+
+
+  function letterChecker() {  
+    // Letters in boxes
+    const row = document.getElementsByClassName("letterRow")[currentRow];
+    const rightGuess = correctWord.split(""); // Convert correctWord to an array for easier manipulation
+
+    for (let i = 0; i < 5; i++) {
+        let letterColor = '';
+        let box = row.children[i];
+        let letter = currentGuess[i];
+
+        // Find the position of the current letter in the correct guess
+        let letterPosition = rightGuess.indexOf(currentGuess[i]);
+
+        // Check if the letter is in the correct guess
+        if (letterPosition === -1) {
+            letterColor = 'grey';
+        } else {
+            // Check if the letter is in the right position
+            if (currentGuess[i] === correctWord[i]) {
+                letterColor = 'green'; // Shade green
             } else {
-                // shade box yellow
-                letterColor = 'yellow'
+                letterColor = 'yellow'; // Shade box yellow (letter is correct, but not in right spot)
             }
 
-            rightGuess[letterPosition] = "#"
+            // Mark the letter as used in the correct guess
+            rightGuess[letterPosition] = "#";
         }
 
-        let delay = 250 * i
-        setTimeout(()=> {
-            //shade box
-            box.style.backgroundColor = letterColor
-            shadeKeyBoard(letter, letterColor)
-        }, delay)
+        // Delayed update of box color
+        let delay = 1 * i;
+        setTimeout(() => {
+            // Shade the box with the determined color
+            box.style.backgroundColor = letterColor;
+            // Shade the corresponding keyboard button
+            shadeKeyBoard(letter, letterColor);
+        }, delay);
     }
-
-
 }
 
+// Function to shade the keyboard button based on the letter color
+function shadeKeyBoard(letter, letterColor) {
+  const keyboardButtons = document.getElementsByClassName("keyboardButton");
 
-
-
-function shadeKeyBoard(letter, color) {
-    for (const elem of document.getElementsByClassName("keyboardButton")) {
+    for (const elem of keyboardButtons) {
         if (elem.textContent === letter) {
-            let oldColor = elem.style.backgroundColor
-            if (oldColor === 'green') {
-                return
-            } 
-
-            if (oldColor === 'yellow' && color !== 'green') {
-                return
+            let oldColor = elem.style.backgroundColor;
+            if (oldColor === 'green' || (oldColor === 'yellow' && color !== 'green')) {
+                return; // Don't change color if already green or yellow and current color isn't green
             }
-
-            elem.style.backgroundColor = color
-            break
+            elem.style.backgroundColor = letterColor; // Update button color
+            break;
         }
     }
 }
 
 
-/*/
     </script>
   </body>
 </html>
