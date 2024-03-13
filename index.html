@@ -28,6 +28,7 @@
         color: #016194;
         text-align: center;
         margin-top: 0;
+        margin-bottom: 2px;
       }
 
       #gameGrid {
@@ -79,8 +80,71 @@
 
       .active-row {
         background-color: #acacac; /* Change to whatever color you want for the active row */
-        }
-        
+      }
+
+      .buggy {
+        background-color: black;
+        color: limegreen;
+      }
+
+      .aboveGame {
+        height: 100px;
+        position: relative;
+        border: 1px solid blue;
+        margin-bottom: 5px;
+        margin-top: 3px;
+      }
+
+      .topBtns {
+        display: flex;
+        justify-content: center;
+      }
+
+      #newGameBtn, 
+      #hintBtn, 
+      #defBtn {
+        margin: 5px;
+        margin-bottom: 2px;
+      }
+
+      #bugBtn, 
+      #newGameBtn, 
+      #hintBtn, 
+      #defBtn {
+      text-align: center;
+      background-color: whitesmoke;
+      color: black;
+      border: 2px solid #e7e7e7;
+      font-weight: bolder;
+      }
+
+      #bugBtn:hover, 
+      #newGameBtn:hover, 
+      #hintBtn:hover, 
+      #defBtn:hover {
+        background-color: lightcyan;
+      }
+
+      .hintBox {
+        background-color: whitesmoke;
+        color: black;
+        border: 2px solid #e7e7e7;
+      }
+
+      #hints {
+        position: relative;
+      }
+
+      #defBox, #hintBox {
+      text-align: center;
+      padding: 5px;
+      }
+
+      #debug {
+        p: limegreen;
+      }
+
+
     </style>
   </head>
   <body>
@@ -90,9 +154,18 @@
         <h1>Wordle</h1>
         <h2>the DGMD E-28 Version</h2>
 
-        <div class="gameBtns">
+        <div class="aboveGame">
+          <div class="topBtns">
           <button id="newGameBtn">New Game</button>
-          <button id="hintBtn">Hint</button>
+          <button id="hintBtn" onclick="hint(correctWord)">Hint</button>
+          <button id="defBtn" onclick="defHint(correctWord)">Definition</button>
+          </div>
+        
+
+        <div id="hints">
+        <div id="hintBox" style="display: none;"></div>
+        <div id="defBox" style="display: none;"></div>
+        </div>
         </div>
 
         <!--5 x 6 Grid-->
@@ -134,7 +207,12 @@
           </div>
         </div>
 
-        <div id="hintBox"></div>
+        <div id="debugGrid">
+        <button id="bugBtn" onclick="bugMode()">Debug Mode</button>
+
+        <div id="debug" style="display: none;"></div>
+        </div>
+        
       </div>
     </main>
 
@@ -142,26 +220,36 @@
       // JS starts here
       console.log("JS loaded");
 
+      // Debug Mode Features throughout Code: color change and displays the word with giveMeWord()
+      //Debug Mode Color Change
+      function bugMode() {
+        var dark = document.body;
+        dark.classList.toggle("buggy");
+        }
+
       // New Game = Refresh page
-      document.getElementById("newGameBtn").addEventListener("click", function () {
+      document
+        .getElementById("newGameBtn")
+        .addEventListener("click", function () {
           location.reload();
         });
 
-    // Empty strings for correctWord and guessedWord
-      var correctWord = "";
+      // Empty strings for correctWord and guessedWord
       var guessedWord = "";
 
-    // Array of current guessed letters to turn into a word
+      // Array of current guessed letters to turn into a word
       var currentGuess = [];
 
       // Total Guesses
       var guessesRemaining = 6;
-    
+
       // For add/delete letter. Moves either forward a space or back a space
       var nextLetter = 0;
 
       // Create variables to store data
       var randomWord;
+      var wordDef;
+      var correctWord;
       var wordDef;
 
       // Starting row and column
@@ -173,7 +261,6 @@
       var numberRows = 6;
       var numberColumns = 5;
 
- 
       // Create elements in HTML "div" for rows and columns based on board game specs
       function makeBoard() {
         // Create rows
@@ -196,124 +283,132 @@
       makeBoard();
 
       // Get random word using Random Word API that automatically filters out words that aren't exactly 5 letters
+    function newGame() {
+      // Clear any saved data from previous games
+      sessionStorage.clear();
+      
       const wordURL = "https://random-word-api.herokuapp.com/word?length=5";
 
-      fetch(wordURL)
-        .then((response) => response.json())
-        .then((data) => {
-          // Store word in single page load to access data
-          sessionStorage.setItem("randomWord", data[0]);
+      async function getWord() {
+        try {
+          const wordResponse = await fetch(wordURL);
+          if (!wordResponse.ok) {
+            throw new Error("Failed to fetch word");
+          }
+          const wordData = await wordResponse.json();
+          correctWord = wordData[0];
 
-          // Access to randomWord testing
-          randomWord = sessionStorage.getItem("randomWord");
+          // Testing
+          console.log("Stored data: ", correctWord);
+       
+      // Call getDefinition() passing the correctWord
+      getDefinition(correctWord);
+    } catch (error) {
+      console.error("Error loading the game:", error);
+    }
+  }
 
-          // Testing that it matches
-          console.log("Stored data: ", randomWord);
- 
-                // Log the error if there is an error populating the game
-            })
-    .catch((error) => {
-        console.error('Error loading the game:' + error);
-    });
-
-
-          // Look up the definition of the randomWord to use as a hint if needed
-          var defURL = `https://api.dictionaryapi.dev/api/v2/entries/en/${randomWord}`;
-
-fetch(defURL)
-    .then((response) => {
-        if (!response.ok) {
-            throw new Error("Dictionary API request failed");
+    // Function to fetch and store the definition of the random word
+    async function getDefinition(correctWord) {
+      try {
+        const defURL = `https://api.dictionaryapi.dev/api/v2/entries/en/${correctWord}`;
+        const defResponse = await fetch(defURL);
+        if (!defResponse.ok) {
+          throw new Error("Dictionary API request failed");
         }
-        return response.json();
-    })
-    .then((data) => {
-        // Store definition in single page load to access data
-        sessionStorage.setItem("definition", data[0].meanings[0].definitions[0].definition);
+        const defData = await defResponse.json();
+        wordDef = defData[0].meanings[0].definitions[0].definition;
 
-        // Access to definition testing
-        wordDef = sessionStorage.getItem("definition");
+                // Testing that it matches
+                console.log("Stored definition: ", wordDef);
 
-        // Testing that it matches
-        console.log("Stored definition: ", wordDef);
-    })
-    .catch((error) => {
-        // If the random word isn't found in the dictionary, the page will reload
-        console.error('Words are hard. Error:' + error);
+      // Store word and definition in session storage to access data during the game
+        sessionStorage.setItem("correctWord", correctWord);
+        sessionStorage.setItem("definition", wordDef);
+
+          //Assign words to be used outside of fetch block to variables
+      } catch (error) {
+        // If the random word isn't found in the dictionary
+        console.error("Words are hard. Error:", error);
         location.reload();
-    });
-
-      //Assign words to be used outside of fetch block to variables
-      correctWord = sessionStorage.getItem("randomWord");
-      wordDef = sessionStorage.getItem("definition");
-
-
-// Update the game board with the word
-function updateBoard() {
-    // Get all the letter boxes
-    var boxes = document.querySelectorAll(".letterColumn");
-
-    // Split the word into characters
-    var letters = randomWord.split("");
-
-    // Update the letter boxes with the characters of the word
-    for (var i = 0; i < boxes.length; i++) {
-        // Convert all letters to uppercase
-        boxes[i].textContent = letters[i];
+      }
     }
-}
-
-// Add key strokes in boxes
-document.addEventListener("keyup", (event) => {
-    const pressedKey = event.key;
-    
-    // Ignore special keys
-    if (pressedKey === "Backspace") {
-        deleteLetter();
-        return;
+      getWord();
     }
-    if (pressedKey === "Enter") {
-        submitGuess();
-        return;
-    }
+    newGame();
 
-    // Validate if it's a letter
-    const isValidKey = /^[a-zA-Z]$/i.test(pressedKey);
-    if (!isValidKey) {
-        // Provide feedback to the user about invalid input
-        console.log("Please enter a valid letter.");
-        return;
-    }
+    // Access correctWord and wordDef after it's been assigned and pause a moment to make sure everything is assigned
+setTimeout(() => {
+    console.log("Correct Word Check: " + correctWord);
+    console.log("Definition Check: " + wordDef)
+}, 600);
 
-    // Handle valid input
-    addLetter(pressedKey.toUpperCase()); // Convert to uppercase for consistency
-});
+      // Update the game board with the word
+      function updateBoard() {
+        // Get all the letter boxes
+        var boxes = document.querySelectorAll(".letterColumn");
 
-function moveNextRow() {
-    const rows = document.getElementsByClassName("letterRow");
+        // Split the word into characters
+        var letters = correctWord.split("");
 
-    // Check if rows is null or undefined
-    if (!rows || rows.length === 0) {
-        console.error("No rows found.");
-        return;
-    }
+        // Update the letter boxes with the characters of the word
+        for (var i = 0; i < boxes.length; i++) {
+          // Convert all letters to uppercase
+          boxes[i].textContent = letters[i];
+        }
+      }
 
-    // Calculate the next row index based on the remaining guesses
-    const nextRowIndex = 6 - guessesRemaining;
+      // Add key strokes in boxes
+      document.addEventListener("keyup", (event) => {
+        const pressedKey = event.key;
 
-    // Remove "active-row" class from all rows
-    for (let i = 0; i < rows.length; i++) {
-        rows[i].classList.remove("active-row");
-    }
+        // Ignore special keys
+        if (pressedKey === "Backspace") {
+          deleteLetter();
+          return;
+        }
+        if (pressedKey === "Enter") {
+          submitGuess();
+          return;
+        }
 
-    // If the next row index is within bounds, add "active-row" class
-    if (nextRowIndex >= 0 && nextRowIndex < numberRows) {
-        rows[nextRowIndex].classList.add("active-row");
-        currentRow = nextRowIndex; // Update the currentRow variable
-        currentColumn = 0;
-        currentGuess = [];
-    }
-};
+        // Validate if it's a letter
+        const isValidKey = /^[a-zA-Z]$/i.test(pressedKey);
+        if (!isValidKey) {
+          // Provide feedback to the user about invalid input
+          console.log("Please enter a valid letter.");
+          return;
+        }
+
+        // Handle valid input
+        addLetter(pressedKey.toUpperCase()); // Convert to uppercase for consistency
+      });
+
+      function moveNextRow() {
+        const rows = document.getElementsByClassName("letterRow");
+
+        // Check if rows is null or undefined
+        if (!rows || rows.length === 0) {
+          console.error("No rows found.");
+          return;
+        }
+
+        // Calculate the next row index based on the remaining guesses
+        const nextRowIndex = 6 - guessesRemaining;
+
+        // Remove "active-row" class from all rows
+        for (let i = 0; i < rows.length; i++) {
+          rows[i].classList.remove("active-row");
+        }
+
+        // If the next row index is within bounds, add "active-row" class
+        if (nextRowIndex >= 0 && nextRowIndex < numberRows) {
+          rows[nextRowIndex].classList.add("active-row");
+          currentRow = nextRowIndex; // Update the currentRow variable
+          currentColumn = 0;
+          currentGuess = [];
+        }
+      }
 
       // Used when the user submits their guess
       function submitGuess() {
@@ -321,16 +416,17 @@ function moveNextRow() {
         var guess = currentGuess.join("");
 
         wordValid(guess);
-        
+
         // If you hit submit too soon
         if (guess.length != 5) {
           alert("Not enough letters!");
           return;
         }
         // If your word is correct OR if you run out of guesses
-        if (guess === randomWord) {
+        if (guess === correctWord) {
           alert("You guessed right! Game over!");
           guessesRemaining = 0;
+          winner();
           return;
         } else {
           guessesRemaining -= 1;
@@ -344,78 +440,75 @@ function moveNextRow() {
         if (guessesRemaining === 0) {
           gameOver();
         }
-      };
+      }
 
+      // Add letter
+      function addLetter(pressedKey) {
+        // Get the row and box to add the letter
+        const row = document.getElementsByClassName("letterRow")[currentRow];
 
+        //All for testing to see if the letters are moving in the correct order
+        //Debug mode?
+        console.log("Current Row:", currentRow);
+        console.log("Current Column:", currentColumn);
+        // It needs to count 0 as 1 so - 1 to count the number of children
+        console.log(
+          "Number of Children:",
+          row.children.length - currentColumn - 1
+        );
 
-// Add letter
-function addLetter(pressedKey) {
-    // Get the row and box to add the letter
-    const row = document.getElementsByClassName("letterRow")[currentRow];
-
-    //All for testing to see if the letters are moving in the correct order
-    //Debug mode?
-    console.log("Current Row:", currentRow);
-    console.log("Current Column:", currentColumn);
-    // It needs to count 0 as 1 so - 1 to count the number of children
-    console.log("Number of Children:", row.children.length - currentColumn - 1);
-
-    const box = row.children[currentColumn];
+        const box = row.children[currentColumn];
 
         // Check if box is undefined
         if (!box) {
-        console.error("Box is undefined.");
-        return;
-    }
-  
-    // Insert the letter
-    box.textContent = pressedKey;
-    currentGuess.push(pressedKey);
-  
-// Check if current row is full
-if (currentColumn != 4) {
-      currentColumn++;
-    } else {
-      return;
-    }
-};
-
-
-
-// Delete Letter
-function deleteLetter() {
-    // Check if there are no letters to delete
-    if (currentGuess.length === 0) {
-        return;
-    }
-
-    // Move back to the previous column
-    currentColumn--;
-
-    // If moving back from the first column, move to the previous row
-    if (currentColumn < 0) {
-        currentRow--;
-        // If moving back from the first row, ensure it doesn't go beyond the grid
-        if (currentRow < 0) {
-            currentRow = 0;
+          console.error("Box is undefined.");
+          return;
         }
-        // Reset to last column of the previous row
-        currentColumn = numberColumns - 1;
-    }
 
-    // Get the row and box of the last entered letter
-    const row = document.getElementsByClassName("letterRow")[currentRow];
-    const box = row.children[currentColumn];
+        // Insert the letter
+        box.textContent = pressedKey;
+        currentGuess.push(pressedKey);
 
-    // Delete the letter
-    box.textContent = "";
-    currentGuess.pop();
-}
+        // Check if current row is full
+        if (currentColumn != 4) {
+          currentColumn++;
+        } else {
+          return;
+        }
+      }
 
+      // Delete Letter
+      function deleteLetter() {
+        // Check if there are no letters to delete
+        if (currentGuess.length === 0) {
+          return;
+        }
 
+        // Move back to the previous column
+        currentColumn--;
+
+        // If moving back from the first column, move to the previous row
+        if (currentColumn < 0) {
+          currentRow--;
+          // If moving back from the first row, ensure it doesn't go beyond the grid
+          if (currentRow < 0) {
+            currentRow = 0;
+          }
+          // Reset to last column of the previous row
+          currentColumn = numberColumns - 1;
+        }
+
+        // Get the row and box of the last entered letter
+        const row = document.getElementsByClassName("letterRow")[currentRow];
+        const box = row.children[currentColumn];
+
+        // Delete the letter
+        box.textContent = "";
+        currentGuess.pop();
+      }
 
       // Add a function to compare the guessed word with the correct word and provide feedback
-      function provideFeedback(guessedWord) {
+      function provideFeedback() {
         let feedback = [];
         for (let i = 0; i < 5; i++) {
           if (guessedWord[i] === correctWord[i]) {
@@ -453,12 +546,63 @@ function deleteLetter() {
             // Handle errors from the API request
             console.error("Error:", error);
           });
-      }
+      };
 
       function gameOver() {
-        alert("You've run out of guesses! Game over!");
-        alert(`The right word was: "${randomWord}"`);
+        alert('You have run out of guesses! Game over!');
+        alert(`The right word was: "${correctWord}"`);
+      };
+
+      function winner() {
+        alert('You won!');
       }
+
+      //Hint Box Section
+      function hint(correctWord) {
+        var firstLetter = correctWord[0];
+        var numOne = firstLetter.toUpperCase();
+
+        console.log("The first letter of the word is " + numOne);
+
+        const x = document.getElementById("hintBox");
+          if (x.style.display === "none") {
+            x.style.display = "block";
+          } else {
+            x.style.display = "none";
+          }
+
+          x.innerHTML = "The first letter of the word is " + numOne;
+
+
+      }
+
+      function defHint(correctWord) {
+        console.log(wordDef);
+
+        const x = document.getElementById("defBox");
+          if (x.style.display === "none") {
+            x.style.display = "block";
+          } else {
+            x.style.display = "none";
+          }
+
+          x.innerHTML = wordDef;
+        };
+  
+
+          function giveMeWord(correctWord) {
+            var x = document.getElementById("debug");
+      if (x.style.display === "none") {
+        x.style.display = "block";
+      } else {
+        x.style.display = "none";
+      }
+
+      x.innerHTML = correctWord;
+          };
+      
+
+
 
       /*/
     
