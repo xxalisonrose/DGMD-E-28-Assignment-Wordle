@@ -44,9 +44,10 @@
         background-color: lightblue;
         border: 1px solid blue;
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
         font-size: xx-large;
+        text-align: center;
       }
 
       .letterRow {
@@ -78,8 +79,17 @@
         text-transform: uppercase;
       }
 
+      .keyBtn {
+        font-size: 1rem;
+        font-weight: 700;
+        padding: 0.5rem;
+        margin: 0 2px;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+
       .active-row {
-        background-color: #acacac; /* Change to whatever color you want for the active row */
+        background-color: darkcyan;
       }
 
       .buggy {
@@ -205,6 +215,7 @@
             <button class="keyboardButton">l</button>
           </div>
           <div class="thirdRow">
+            <button class="keyBtn" onclick="deleteLetter()">Delete</button>
             <button class="keyboardButton">z</button>
             <button class="keyboardButton">x</button>
             <button class="keyboardButton">c</button>
@@ -212,6 +223,7 @@
             <button class="keyboardButton">b</button>
             <button class="keyboardButton">n</button>
             <button class="keyboardButton">m</button>
+            <button class="keyBtn" onclick="submitGuess()">Enter</button>
           </div>
         </div>
 
@@ -229,19 +241,18 @@
 
       // Clickable Keyboard
 
-      const keyboardButtons = document.querySelectorAll('.keyboardButton');
+      const keyboardButtons = document.querySelectorAll(".keyboardButton");
 
-      keyboardButtons.forEach(button => {
-          button.addEventListener('click', () => {
-              // Get the text content of the letter
-              const letter = button.textContent;
-              // Make it uppercase
-              const LETTER = letter.toUpperCase();
-              // BAM! Letter that is clickable!
-              addLetter(LETTER);
-          });
+      keyboardButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          // Get the text content of the letter
+          const letter = button.textContent;
+          // Make it uppercase
+          const LETTER = letter.toUpperCase();
+          // BAM! Letter that is clickable!
+          addLetter(LETTER);
+        });
       });
-
 
       // New Game = Refresh page
       document
@@ -462,7 +473,7 @@
           } else {
             guessesRemaining -= 1;
             console.log("Guesses Remaining: " + guessesRemaining);
-            keyboardLetterChecker(currentGuess);
+            keyboardLetterChecker();
             letterChecker();
             moveNextRow();
           }
@@ -624,90 +635,63 @@
         x.innerHTML = correctWord.toUpperCase();
       }
 
+      function letterChecker() {
+        // Letters in boxes
+        const row = document.getElementsByClassName("letterRow")[currentRow];
+        const rightGuess = correctWord.toUpperCase(); // Convert uppercase
 
-    // Letter indicator - have they been used? Are they correct? Are they wrong?
-    function keyboardLetterChecker() {
-    var arrayCorrect = correctWord.toUpperCase(); // Convert correctWord to uppercase
-    var upperArray = arrayCorrect.split(""); // Split the uppercase word into an array of characters
+        for (let i = 0; i < 5; i++) {
+          let letterColor = "";
+          let box = row.children[i];
+          let guessedLetter = currentGuess[i].toUpperCase(); // Convert uppercase
 
-    var feedback = []; // Initialize the feedback array
+          // Check if the guessed letter is correct and in the correct position
+          if (guessedLetter === rightGuess[i]) {
+            letterColor = "lightgreen";
+          }
+          // Check if the guessed letter is incorrect
+          else if (!rightGuess.includes(guessedLetter)) {
+            letterColor = "lightgrey";
+          }
+          // Check if the guessed letter is correct but in the wrong position
+          else if (
+            rightGuess.includes(guessedLetter) &&
+            guessedLetter !== rightGuess[i]
+          ) {
+            letterColor = "rgb(230, 232, 134)";
+          }
+          // Update the background color of the box
+          box.style.backgroundColor = letterColor;
+        }
+      }
 
+      // Letter indicator - have they been used? Are they correct? Are they wrong?
+      function keyboardLetterChecker() {
+    var arrayCorrect = correctWord.toUpperCase();
+    var upperArray = arrayCorrect.split("");
 
+    var feedback = [];
 
     // Letters in keyboard
-    for (let i = 0; i < 5; i++) {
-
-      console.log(upperArray[i]);
-      console.log(currentGuess[i]);
+    document.querySelectorAll('.keyboardButton').forEach((button, i) => {
+        const currentLetter = button.textContent.toUpperCase(); // Get the value of the clicked button
 
         if (currentGuess[i] === upperArray[i]) {
-            feedback.push("green"); // Correct letter in the correct position
-        } else if (upperArray[i] !== currentGuess[i] && upperArray.includes(currentGuess[i])) {
-            feedback.push("yellow"); // Correct letter in the wrong position
+            feedback.push("lightgreen"); // Correct letter in the correct position
+        } else if (upperArray.includes(currentLetter)) {
+            feedback.push("rgb(230, 232, 134)"); // Correct letter in the wrong position
         } else {
-            feedback.push("gray"); // Incorrect letter
+            feedback.push("lightgrey"); // Incorrect letter
         }
-    }
+    });
 
-    return feedback; // Return the feedback array after the loop completes
-}
+    // Update the background of the keys to above color scheme
+    document.querySelectorAll('.keyboardButton').forEach((button, index) => {
+        button.style.backgroundColor = feedback[index];
+    });
 
-
-  function letterChecker() {  
-    // Letters in boxes
-    const row = document.getElementsByClassName("letterRow")[currentRow];
-    const rightGuess = correctWord.split(""); // Convert correctWord to an array for easier manipulation
-
-    for (let i = 0; i < 5; i++) {
-        let letterColor = '';
-        let box = row.children[i];
-        let letter = currentGuess[i];
-
-        // Find the position of the current letter in the correct guess
-        let letterPosition = rightGuess.indexOf(currentGuess[i]);
-
-        // Check if the letter is in the correct guess
-        if (letterPosition === -1) {
-            letterColor = 'grey';
-        } else {
-            // Check if the letter is in the right position
-            if (currentGuess[i] === correctWord[i]) {
-                letterColor = 'green'; // Shade green
-            } else {
-                letterColor = 'yellow'; // Shade box yellow (letter is correct, but not in right spot)
-            }
-
-            // Mark the letter as used in the correct guess
-            rightGuess[letterPosition] = "#";
-        }
-
-        // Delayed update of box color
-        let delay = 1 * i;
-        setTimeout(() => {
-            // Shade the box with the determined color
-            box.style.backgroundColor = letterColor;
-            // Shade the corresponding keyboard button
-            shadeKeyBoard(letter, letterColor);
-        }, delay);
-    }
-}
-
-// Function to shade the keyboard button based on the letter color
-function shadeKeyBoard(letter, letterColor) {
-  const keyboardButtons = document.getElementsByClassName("keyboardButton");
-
-    for (const elem of keyboardButtons) {
-        if (elem.textContent === letter) {
-            let oldColor = elem.style.backgroundColor;
-            if (oldColor === 'green' || (oldColor === 'yellow' && color !== 'green')) {
-                return; // Don't change color if already green or yellow and current color isn't green
-            }
-            elem.style.backgroundColor = letterColor; // Update button color
-            break;
-        }
-    }
-}
-
+    return feedback;
+};
 
     </script>
   </body>
