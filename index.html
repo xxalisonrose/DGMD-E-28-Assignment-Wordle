@@ -189,43 +189,45 @@
         <!--5 x 6 Grid-->
         <div id="gameGrid"></div>
 
-        <!--Display letter elements (And it's clickable!!!)-->
-        <div id="keyboard">
-          <div class="firstRow">
-            <button class="keyboardButton">q</button>
-            <button class="keyboardButton">w</button>
-            <button class="keyboardButton">e</button>
-            <button class="keyboardButton">r</button>
-            <button class="keyboardButton">t</button>
-            <button class="keyboardButton">y</button>
-            <button class="keyboardButton">u</button>
-            <button class="keyboardButton">i</button>
-            <button class="keyboardButton">o</button>
-            <button class="keyboardButton">p</button>
-          </div>
-          <div class="secondRow">
-            <button class="keyboardButton">a</button>
-            <button class="keyboardButton">s</button>
-            <button class="keyboardButton">d</button>
-            <button class="keyboardButton">f</button>
-            <button class="keyboardButton">g</button>
-            <button class="keyboardButton">h</button>
-            <button class="keyboardButton">j</button>
-            <button class="keyboardButton">k</button>
-            <button class="keyboardButton">l</button>
-          </div>
-          <div class="thirdRow">
-            <button class="keyBtn" onclick="deleteLetter()">Delete</button>
-            <button class="keyboardButton">z</button>
-            <button class="keyboardButton">x</button>
-            <button class="keyboardButton">c</button>
-            <button class="keyboardButton">v</button>
-            <button class="keyboardButton">b</button>
-            <button class="keyboardButton">n</button>
-            <button class="keyboardButton">m</button>
-            <button class="keyBtn" onclick="submitGuess()">Enter</button>
-          </div>
-        </div>
+ <!--Display letter elements (And it's clickable!!!)-->
+ <!--ASCII added to each letter to help with the color changing keyboard-->
+<div id="keyboard">
+  <div class="firstRow">
+    <button id="81" class="keyboardButton">q</button>
+    <button id="87" class="keyboardButton">w</button>
+    <button id="69" class="keyboardButton">e</button>
+    <button id="82" class="keyboardButton">r</button>
+    <button id="84" class="keyboardButton">t</button>
+    <button id="89" class="keyboardButton">y</button>
+    <button id="85" class="keyboardButton">u</button>
+    <button id="73" class="keyboardButton">i</button>
+    <button id="79" class="keyboardButton">o</button>
+    <button id="80" class="keyboardButton">p</button>
+  </div>
+  <div class="secondRow">
+    <button id="65" class="keyboardButton">a</button>
+    <button id="83" class="keyboardButton">s</button>
+    <button id="68" class="keyboardButton">d</button>
+    <button id="70" class="keyboardButton">f</button>
+    <button id="71" class="keyboardButton">g</button>
+    <button id="72" class="keyboardButton">h</button>
+    <button id="74" class="keyboardButton">j</button>
+    <button id="75" class="keyboardButton">k</button>
+    <button id="76" class="keyboardButton">l</button>
+  </div>
+  <div class="thirdRow">
+    <button class="keyBtn" onclick="deleteLetter()">Delete</button>
+    <button id="90" class="keyboardButton">z</button>
+    <button id="88" class="keyboardButton">x</button>
+    <button id="67" class="keyboardButton">c</button>
+    <button id="86" class="keyboardButton">v</button>
+    <button id="66" class="keyboardButton">b</button>
+    <button id="78" class="keyboardButton">n</button>
+    <button id="77" class="keyboardButton">m</button>
+    <button class="keyBtn" onclick="submitGuess()">Enter</button>
+  </div>
+</div>
+
 
         <div id="debugGrid">
           <button id="bugBtn" onclick="bugMode()">Debug Mode</button>
@@ -666,32 +668,80 @@
       }
 
       // Letter indicator - have they been used? Are they correct? Are they wrong?
-      function keyboardLetterChecker() {
+    function keyboardLetterChecker() {
+ 
+      // FOR  CORRECT WORD
     var arrayCorrect = correctWord.toUpperCase();
     var upperArray = arrayCorrect.split("");
 
-    var feedback = [];
+    // DEBUG: Check these are both arrays
+    console.log(Array.isArray(currentGuess));
+    console.log(Array.isArray(upperArray));
+
+    // Get the ASCII values for each uppercase letter
+    var charArray = asciiArray(upperArray);
+
+    console.log('Correct Word: ' + charArray);
+
+    // FOR GUESSED WORD
+    const guessedArray = asciiArray(currentGuess);
+
+    console.log('Guessed Word: ' + guessedArray);
 
     // Letters in keyboard
     document.querySelectorAll('.keyboardButton').forEach((button, i) => {
-        const currentLetter = button.textContent.toUpperCase(); // Get the value of the clicked button
+      // Get ID (aka ASCII value) for each button (in a string)
+        var buttonId = button.id;
 
-        if (currentGuess[i] === upperArray[i]) {
-            feedback.push("lightgreen"); // Correct letter in the correct position
-        } else if (upperArray.includes(currentLetter)) {
-            feedback.push("rgb(230, 232, 134)"); // Correct letter in the wrong position
-        } else {
-            feedback.push("lightgrey"); // Incorrect letter
+        // Turn string into an array
+        var btnArray = buttonId.split("");
+
+        const arrayMatch = [];
+
+        guessedArray.forEach((item, index) => {
+        if (charArray[index] === item){
+          arrayMatch.push({value: item, index});
         }
-    });
 
-    // Update the background of the keys to above color scheme
-    document.querySelectorAll('.keyboardButton').forEach((button, index) => {
-        button.style.backgroundColor = feedback[index];
-    });
+        function greenMatch(array) {
+          return array === arrayMatch;
+        }
+        
+        var green = btnArray.filter(greenMatch);
 
-    return feedback;
+        console.log(green);
+        
+        document.getElementById(buttonId).style.backgroundColor = "lightgreen"; // Correct letter in the correct position
+      });
+    })};
+
+      
+        
+
+    /*/
+
+        if
+          
+         (charArray.includes(guessedArray)) {
+          button.style.backgroundColor = "rgb(230, 232, 134)"; // Correct letter in the wrong position
+        } else {
+          button.style.backgroundColor = "lightgrey"; // Incorrect letter
+        }
+        /*/
+
+// Loop through the array to get the ASCII value for each letter
+function asciiArray(array) {
+  const asciiValues = [];
+  for (let i = 0; i < array.length; i++) {
+        const char = array[i].toUpperCase();
+        const ascii = char.charCodeAt(0); 
+        asciiValues.push(ascii);
+    }
+    return asciiValues;
 };
+
+
+
 
     </script>
   </body>
