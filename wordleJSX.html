@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Wordle, the DGMD E-28 Version</title>
+    <!-- React libraries -->
+    <script
+      crossorigin
+      src="https://unpkg.com/react@17/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
+    ></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      body {
+        position: relative;
+        max-width: 480px;
+        height: 100%;
+        margin: auto;
+      }
+
+      .box {
+        position: relative;
+        border-style: solid;
+        border-width: 2px;
+        padding: 1em;
+        margin-top: 3em;
+      }
+
+      .wordle-board {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .wordle-row {
+        display: flex;
+        margin-bottom: 10px;
+      }
+
+      .wordle-cell {
+        width: 50px;
+        height: 50px;
+        font-size: large;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 10px;
+      }
+
+      .letter-cell {
+        background-color: lightgrey;
+      }
+
+      .green {
+        background-color: green;
+        border: 1px black solid;
+      }
+
+      .yellow {
+        background-color: yellow;
+        border: 1px black solid;
+      }
+
+      .grey {
+        background-color: grey;
+        border: 1px black solid;
+      }
+
+      .white {
+        background-color: white;
+        border: 1px black solid;
+      }
+
+      .keyboard {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+      }
+
+      .keyboard-row {
+        display: flex;
+        margin-bottom: 10px;
+      }
+
+      .keyboard-key {
+        width: 50px;
+        height: 50px;
+        border: 1px solid black;
+        font-size: large;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 10px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <!--a box around the game-->
+      <div class="box">
+        <h1>Wordle</h1>
+        <h2>the DGMD E-28 Version</h2>
+
+        <!--5 x 6 Grid Made by React-->
+        <div id="root"></div>
+
+        <div id="keyboard"></div>
+      </div>
+    </main>
+
+    <script type="text/babel">
+      // Hardcoded guesses -- correct word "MOODY"
+      var guesses = [
+        { word: "might", colors: ["green", "grey", "grey", "grey", "grey"] },
+        {
+          word: "flood",
+          colors: ["grey", "grey", "green", "yellow", "yellow"],
+        },
+        { word: "stray", colors: ["grey", "grey", "grey", "grey", "green"] },
+      ];
+
+      // Define the board
+      ReactDOM.render(
+        <div className="wordle-board">
+          {Array(6)
+            .fill()
+            .map((_, guessIndex) => {
+              const guess = guesses[guessIndex] || {
+                word: "",
+                colors: Array(5).fill("white"),
+              };
+              return (
+                <div key={guessIndex} className="wordle-row">
+                  {/* Render word letters */}
+                  {guess.word.split("").map((letter, letterIndex) => (
+                    <div
+                      key={letterIndex}
+                      className={`wordle-cell letter-cell ${guess.colors[letterIndex]}`}
+                    >
+                      {letter}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+        </div>,
+        document.getElementById("root")
+      );
+
+      // Define the on-screen keyboard component
+      function Keyboard() {
+        const keyboardLayout = [
+          ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+          ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+          ["Z", "X", "C", "V", "B", "N", "M"],
+        ];
+
+        return (
+          <div className="keyboard">
+            {keyboardLayout.map((row, rowIndex) => (
+              <div key={rowIndex} className="keyboard-row">
+                {row.map((key, keyIndex) => (
+                  <div key={keyIndex} className="keyboard-key">
+                    {key}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        );
+      }
+      // Render the keyboard
+      ReactDOM.render(<Keyboard />, document.getElementById("keyboard"));
+    </script>
+  </body>
+</html>
